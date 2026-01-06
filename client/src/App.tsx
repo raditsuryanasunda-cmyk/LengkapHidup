@@ -8,6 +8,8 @@ import Home from "@/pages/Home";
 import Explore from "@/pages/Explore";
 import VenueDetails from "@/pages/VenueDetails";
 import Profile from "@/pages/Profile";
+import Community from "@/pages/Community";
+import Partner from "@/pages/Partner";
 
 function Router() {
   return (
@@ -16,6 +18,8 @@ function Router() {
       <Route path="/explore" component={Explore} />
       <Route path="/venue/:id" component={VenueDetails} />
       <Route path="/profile" component={Profile} />
+      <Route path="/community" component={Community} />
+      <Route path="/partner" component={Partner} />
       <Route component={NotFound} />
     </Switch>
   );
