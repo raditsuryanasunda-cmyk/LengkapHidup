@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search, MapPin, Calendar as CalendarIcon, ChevronRight, Star, TrendingUp, Newspaper, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLocation } from "wouter";
+import { Badge } from "@/components/ui/badge";
 import heroImg from "@assets/generated_images/hero_background_of_diverse_people_playing_sports_like_futsal_and_badminton_energetically.png";
 
 export default function Home() {
