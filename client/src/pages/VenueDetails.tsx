@@ -1,189 +1,164 @@
 import { useState } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { MOCK_VENUES } from "@/lib/mockData";
+import { MOCK_VENUES, MOCK_USER } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { MapPin, Star, Clock, CheckCircle2, Wifi, Droplets, Car, Utensils, Dumbbell, Share2, Heart } from "lucide-react";
+import { MapPin, Star, Clock, CheckCircle2, MessageSquare, Send, CreditCard, Landmark, QrCode, Ticket } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
 
 export default function VenueDetails() {
   const [, params] = useRoute("/venue/:id");
+  const [, setLocation] = useLocation();
   const venueId = params?.id;
   const venue = MOCK_VENUES.find(v => v.id === venueId);
-  const { toast } = useToast();
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
+  
+  // Comments state
+  const [comments, setComments] = useState([
+    { id: 1, user: "Davi Kurniawan", text: "Lapangan mantap, rumputnya masih empuk banget!", rating: 5, date: "3 hari lalu" },
+    { id: 2, user: "Ghina Nabila", text: "Parkirnya luas, kantinnya enak-enak snacknya.", rating: 4, date: "1 minggu lalu" }
+  ]);
+  const [newComment, setNewComment] = useState("");
 
-  if (!venue) return <div className="min-h-screen flex items-center justify-center">Venue not found</div>;
-
-  const timeSlots = [
-    "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", 
-    "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", 
-    "20:00", "21:00", "22:00"
-  ];
+  if (!venue) return null;
 
   const handleBooking = () => {
     setIsBookingOpen(false);
-    setTimeout(() => {
-      setIsSuccessOpen(true);
-    }, 500);
+    setIsSuccessOpen(true);
   };
 
-  const FacilityIcon = ({ name }: { name: string }) => {
-    switch (name) {
-      case "Wifi": return <Wifi className="w-4 h-4" />;
-      case "Shower": return <Droplets className="w-4 h-4" />;
-      case "Parking": return <Car className="w-4 h-4" />;
-      case "Canteen": return <Utensils className="w-4 h-4" />;
-      case "Gym": return <Dumbbell className="w-4 h-4" />;
-      default: return <CheckCircle2 className="w-4 h-4" />;
-    }
+  const addComment = () => {
+    if (!newComment.trim()) return;
+    setComments([{
+      id: Date.now(),
+      user: MOCK_USER.name,
+      text: newComment,
+      rating: 5,
+      date: "Baru saja"
+    }, ...comments]);
+    setNewComment("");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans">
       <Navbar />
 
-      {/* Hero Image */}
-      <div className="relative h-[50vh] min-h-[400px]">
-        <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent opacity-80"></div>
-        
-        <div className="absolute bottom-0 left-0 w-full p-4 md:p-10 pb-10">
-          <div className="container mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-              <div>
-                <Badge className="mb-4 bg-primary hover:bg-primary text-white border-none px-3 py-1 text-sm">{venue.type}</Badge>
-                <h1 className="text-4xl md:text-5xl font-heading font-bold text-white mb-2">{venue.name}</h1>
-                <div className="flex items-center gap-4 text-slate-300">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>{venue.location}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                    <span className="font-bold text-white">{venue.rating}</span>
-                    <span>({venue.reviewCount} reviews)</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-3">
-                <Button variant="outline" size="icon" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                  <Share2 className="w-5 h-5" />
-                </Button>
-                <Button variant="outline" size="icon" className="bg-white/10 border-white/20 text-white hover:bg-white/20">
-                  <Heart className="w-5 h-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 py-8 -mt-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+      <div className="container mx-auto px-4 pt-32 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* About */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-              <h2 className="text-2xl font-bold font-heading mb-4">Tentang Venue</h2>
-              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                {venue.description}
-              </p>
-              
-              <div className="mt-8">
-                <h3 className="font-bold mb-4">Fasilitas</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {venue.facilities.map(fac => (
-                    <div key={fac} className="flex items-center gap-2 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 p-3 rounded-lg">
-                      <FacilityIcon name={fac} />
-                      <span className="text-sm font-medium">{fac}</span>
-                    </div>
-                  ))}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Header */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Badge className="bg-secondary text-white font-bold">{venue.type}</Badge>
+                <div className="flex items-center text-yellow-500 font-bold">
+                  <Star className="w-4 h-4 fill-current mr-1" /> {venue.rating}
                 </div>
+              </div>
+              <h1 className="text-5xl font-heading font-black uppercase italic tracking-tighter mb-4">{venue.name}</h1>
+              <p className="flex items-center text-muted-foreground font-medium">
+                <MapPin className="w-4 h-4 mr-2 text-primary" /> {venue.address}
+              </p>
+            </div>
+
+            {/* Images */}
+            <div className="rounded-[3rem] overflow-hidden h-[400px] shadow-2xl">
+              <img src={venue.image} alt={venue.name} className="w-full h-full object-cover" />
+            </div>
+
+            {/* About */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+              <h2 className="text-2xl font-bold font-heading mb-4 italic uppercase">Informasi Lapangan</h2>
+              <p className="text-slate-600 leading-relaxed mb-6">{venue.description}</p>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {venue.facilities.map(f => (
+                  <div key={f} className="flex items-center gap-2 text-sm font-bold bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <CheckCircle2 className="w-4 h-4 text-primary" /> {f}
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Location Mock Map */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-              <h2 className="text-2xl font-bold font-heading mb-4">Lokasi</h2>
-              <p className="text-slate-500 mb-4 flex items-center gap-2">
-                <MapPin className="w-4 h-4" /> {venue.address}
-              </p>
-              <div className="w-full h-64 bg-slate-200 rounded-xl flex items-center justify-center overflow-hidden relative group cursor-pointer">
-                {/* Mock Map Pattern */}
-                <div className="absolute inset-0 opacity-30" style={{ 
-                  backgroundImage: "radial-gradient(#cbd5e1 1px, transparent 1px)", 
-                  backgroundSize: "20px 20px" 
-                }}></div>
-                <div className="bg-white p-4 rounded-full shadow-lg relative z-10 group-hover:scale-110 transition-transform">
-                  <MapPin className="w-8 h-8 text-primary" />
-                </div>
-                <Button variant="secondary" className="absolute bottom-4 right-4 z-10 shadow-lg">Buka di Google Maps</Button>
+            {/* Comments Section */}
+            <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+              <h2 className="text-2xl font-bold font-heading mb-8 italic uppercase flex items-center gap-2">
+                <MessageSquare className="w-6 h-6" /> Ulasan Pengguna
+              </h2>
+              
+              <div className="space-y-6 mb-10">
+                {comments.map(c => (
+                  <div key={c.id} className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div className="flex justify-between items-center mb-3">
+                      <p className="font-bold text-primary">{c.user}</p>
+                      <span className="text-xs text-muted-foreground font-medium">{c.date}</span>
+                    </div>
+                    <p className="text-slate-600 text-sm font-medium">{c.text}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-4">
+                <Input 
+                  placeholder="Tambahkan ulasan Anda..." 
+                  className="rounded-xl h-12 font-medium"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <Button className="h-12 w-12 rounded-xl" onClick={addComment}>
+                  <Send className="w-5 h-5" />
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Booking Sidebar */}
+          {/* Sidebar Booking */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl border border-slate-100 dark:border-slate-800 sticky top-24">
-              <div className="flex justify-between items-center mb-6 pb-6 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <span className="text-sm text-muted-foreground">Harga per jam</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold text-primary">
-                      Rp {venue.pricePerHour.toLocaleString("id-ID")}
-                    </span>
-                  </div>
-                </div>
-                <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
-                  Tersedia
-                </div>
-              </div>
+            <div className="bg-primary text-white rounded-[3rem] p-8 shadow-2xl sticky top-32 border-4 border-white/10 overflow-hidden">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+               
+               <div className="relative z-10">
+                 <p className="text-white/60 font-bold uppercase tracking-widest text-xs mb-1">Mulai Dari</p>
+                 <div className="flex items-baseline gap-2 mb-8">
+                   <span className="text-4xl font-black italic tracking-tighter">Rp {venue.pricePerHour.toLocaleString()}</span>
+                   <span className="text-white/60 font-bold text-sm">/jam</span>
+                 </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Pilih Tanggal</label>
-                  <div className="border rounded-lg p-3 flex items-center justify-between cursor-pointer hover:border-primary transition-colors" onClick={() => setIsBookingOpen(true)}>
-                    <span className="font-medium">
-                      {date ? format(date, "EEEE, d MMMM yyyy", { locale: id }) : "Pilih tanggal"}
-                    </span>
-                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </div>
+                 <div className="space-y-6">
+                    <Button 
+                      className="w-full h-16 rounded-2xl bg-secondary hover:bg-secondary/90 text-white font-black text-xl italic uppercase tracking-tighter shadow-lg"
+                      onClick={() => setIsBookingOpen(true)}
+                    >
+                      Booking Sekarang
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full h-16 rounded-2xl bg-white/10 border-white/20 text-white font-black text-xl italic uppercase tracking-tighter hover:bg-white/20"
+                      onClick={() => setLocation("/login")}
+                    >
+                      Lihat Lokasi
+                    </Button>
+                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Pilih Jam</label>
-                  <div className="border rounded-lg p-3 flex items-center justify-between cursor-pointer hover:border-primary transition-colors" onClick={() => setIsBookingOpen(true)}>
-                    <span className="font-medium">
-                      {selectedTime || "Pilih jam main"}
-                    </span>
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <Button 
-                  className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20" 
-                  onClick={() => setIsBookingOpen(true)}
-                >
-                  Booking Sekarang
-                </Button>
-                
-                <p className="text-xs text-center text-muted-foreground mt-4">
-                  Dijamin aman. Pembatalan gratis hingga 24 jam sebelum jadwal.
-                </p>
-              </div>
+                 <div className="mt-8 pt-8 border-t border-white/10 flex items-center justify-between text-sm font-bold">
+                    <div className="flex items-center gap-2">
+                       <Clock className="w-4 h-4 text-secondary" /> <span>08:00 - 22:00</span>
+                    </div>
+                    <div className="text-green-400">● Tersedia</div>
+                 </div>
+               </div>
             </div>
           </div>
         </div>
@@ -191,126 +166,105 @@ export default function VenueDetails() {
 
       {/* Booking Dialog */}
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl rounded-[2.5rem] p-10">
           <DialogHeader>
-            <DialogTitle>Jadwal & Booking</DialogTitle>
-            <DialogDescription>
-              Pilih tanggal dan waktu bermain di {venue.name}
-            </DialogDescription>
+            <DialogTitle className="text-3xl font-heading font-black italic uppercase tracking-tighter">Detail Reservasi</DialogTitle>
           </DialogHeader>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-            <div>
-              <h4 className="font-bold mb-3 text-sm">Tanggal</h4>
-              <div className="border rounded-lg p-2 flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md border-0"
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 py-6">
+            <div className="space-y-6">
+               <div>
+                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-3">Pilih Tanggal</label>
+                 <Calendar mode="single" selected={date} onSelect={setDate} className="border rounded-2xl p-4 bg-slate-50" />
+               </div>
             </div>
-            
-            <div>
-              <h4 className="font-bold mb-3 text-sm">Jam Tersedia</h4>
-              <div className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-2">
-                {timeSlots.map((time) => (
-                  <button
-                    key={time}
-                    className={`py-2 px-1 rounded-md text-sm font-medium transition-all ${
-                      selectedTime === time 
-                        ? "bg-primary text-white shadow-md scale-105" 
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                    }`}
-                    onClick={() => setSelectedTime(time)}
+            <div className="space-y-6">
+              <div>
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground block mb-3">Metode Pembayaran</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <button 
+                    onClick={() => setPaymentMethod("qris")}
+                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all font-bold ${paymentMethod === "qris" ? "border-primary bg-primary/5" : "border-slate-100"}`}
                   >
-                    {time}
+                    <QrCode className="w-6 h-6 text-primary" /> <span>QRIS / E-Wallet</span>
                   </button>
-                ))}
+                  <button 
+                    onClick={() => setPaymentMethod("va")}
+                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all font-bold ${paymentMethod === "va" ? "border-primary bg-primary/5" : "border-slate-100"}`}
+                  >
+                    <Landmark className="w-6 h-6 text-primary" /> <span>Virtual Account</span>
+                  </button>
+                  <button 
+                    onClick={() => setPaymentMethod("card")}
+                    className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all font-bold ${paymentMethod === "card" ? "border-primary bg-primary/5" : "border-slate-100"}`}
+                  >
+                    <CreditCard className="w-6 h-6 text-primary" /> <span>Kartu Kredit</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
           
-          <DialogFooter className="flex-col sm:flex-row gap-3 border-t pt-4 mt-2">
-            <div className="flex-1 flex justify-between items-center sm:justify-start sm:gap-4">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Total:</span>
-                <span className="block font-bold text-lg text-primary">
-                  Rp {selectedTime ? venue.pricePerHour.toLocaleString("id-ID") : "0"}
-                </span>
-              </div>
+          <DialogFooter className="flex-row gap-4 border-t pt-8">
+            <div className="flex-1">
+              <span className="text-xs font-bold text-muted-foreground uppercase">Estimasi Total</span>
+              <p className="text-2xl font-black italic tracking-tighter text-primary">Rp {venue.pricePerHour.toLocaleString()}</p>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setIsBookingOpen(false)}>Batal</Button>
-              <Button 
-                className="flex-1 sm:flex-none bg-secondary hover:bg-secondary/90 text-white" 
-                disabled={!selectedTime || !date}
-                onClick={handleBooking}
-              >
-                Konfirmasi Booking
-              </Button>
-            </div>
+            <Button className="h-14 px-10 rounded-2xl font-black uppercase italic tracking-tighter text-lg" disabled={!paymentMethod} onClick={handleBooking}>
+              Bayar Sekarang
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Success Dialog */}
+      {/* Success/Ticket Interaction */}
       <Dialog open={isSuccessOpen} onOpenChange={setIsSuccessOpen}>
-        <DialogContent className="sm:max-w-md text-center py-10">
-          <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <CheckCircle2 className="w-10 h-10 text-green-600" />
+        <DialogContent className="sm:max-w-md rounded-[3rem] p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-primary p-10 text-white text-center relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.1)_0%,transparent_70%)]"></div>
+             <div className="mx-auto w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-6 backdrop-blur-md">
+                <CheckCircle2 className="w-10 h-10 text-white" />
+             </div>
+             <h2 className="text-3xl font-heading font-black italic uppercase tracking-tighter mb-2">Booking Berhasil!</h2>
+             <p className="text-white/60 font-bold">Siapkan kemenangan Anda!</p>
           </div>
-          <DialogTitle className="text-2xl font-bold mb-2">Booking Berhasil!</DialogTitle>
-          <DialogDescription className="text-base mb-6">
-            Terima kasih! Booking anda di <strong>{venue.name}</strong> untuk tanggal <strong>{date && format(date, "d MMMM yyyy", { locale: id })}</strong> jam <strong>{selectedTime}</strong> telah terkonfirmasi.
-          </DialogDescription>
           
-          <div className="bg-slate-50 p-4 rounded-lg mb-6 text-left">
-            <h4 className="font-bold text-sm mb-2 text-slate-700">Detail Pembayaran</h4>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-muted-foreground">Metode</span>
-              <span className="font-medium">Bayar di Tempat (COD)</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Total</span>
-              <span className="font-bold text-primary">Rp {venue.pricePerHour.toLocaleString("id-ID")}</span>
-            </div>
-          </div>
+          <div className="p-10 bg-white">
+            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl p-6 relative">
+              <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full border-r-2 border-dashed border-slate-200"></div>
+              <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full border-l-2 border-dashed border-slate-200"></div>
+              
+              <div className="flex justify-between items-center mb-4">
+                 <div className="font-heading font-black text-primary text-xl tracking-tighter uppercase italic">{venue.name}</div>
+                 <Badge className="bg-secondary">PAID</Badge>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">TANGGAL</span>
+                  <span className="text-sm font-black text-primary">{date ? format(date, "d MMM yyyy") : ""}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">JAM</span>
+                  <span className="text-sm font-black text-primary">08:00 WIB</span>
+                </div>
+              </div>
 
-          <div className="flex flex-col gap-2">
-            <Button className="w-full" onClick={() => setIsSuccessOpen(false)}>Lihat Tiket Saya</Button>
-            <Button variant="ghost" className="w-full" onClick={() => setIsSuccessOpen(false)}>Kembali ke Beranda</Button>
+              <div className="flex justify-center p-4 bg-white rounded-2xl mb-4 border border-slate-100">
+                 <QrCode className="w-32 h-32 text-primary" />
+              </div>
+              <p className="text-[10px] text-center text-muted-foreground font-bold uppercase tracking-widest">TUNJUKKAN QR SAAT TIBA DI LOKASI</p>
+            </div>
+            
+            <div className="mt-8 flex gap-4">
+               <Button className="flex-1 h-14 rounded-2xl font-black uppercase italic tracking-tighter" onClick={() => setIsSuccessOpen(false)}>Kembali Ke Beranda</Button>
+               <Button variant="outline" className="h-14 w-14 rounded-2xl"><Ticket className="w-6 h-6" /></Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      <div className="mt-20">
-        <Footer />
-      </div>
+      <Footer />
     </div>
   );
-}
-
-function CalendarIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-      <line x1="16" x2="16" y1="2" y2="6" />
-      <line x1="8" x2="8" y1="2" y2="6" />
-      <line x1="3" x2="21" y1="10" y2="10" />
-    </svg>
-  )
 }

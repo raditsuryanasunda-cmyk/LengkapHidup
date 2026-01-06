@@ -10,6 +10,7 @@ import VenueDetails from "@/pages/VenueDetails";
 import Profile from "@/pages/Profile";
 import Community from "@/pages/Community";
 import Partner from "@/pages/Partner";
+import Login from "@/pages/Login";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/community" component={Community} />
       <Route path="/partner" component={Partner} />
+      <Route path="/login" component={Login} />
       <Route component={NotFound} />
     </Switch>
   );
